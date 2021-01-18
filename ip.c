@@ -138,6 +138,8 @@ ip_input(const uint8_t *data, size_t len, struct net_device *dev)
 {
     struct ip_hdr *hdr;
 
+    struct ip_iface *iface;
+
     /*
      * exercise: step5
      *   IPデータグラムの検証
@@ -150,6 +152,19 @@ ip_input(const uint8_t *data, size_t len, struct net_device *dev)
      *     c. トータル長（len がトータル長以上である）
      *     d. ttl（ttl が 0 ではない）
      *     c. チェックサム（チェックサムを再計算した結果が0である）
+     */
+    iface = (struct ip_iface *)net_device_get_iface(dev, NET_IFACE_FAMILY_IPV4);
+    if (!iface) {
+        /* IP interface is not registered to the device */
+        return;
+    }
+    /*
+     * exercise: step6
+     *   パケットのフィルタリング
+     *   (1) 宛先アドレスが以下の何れでもない場合は他のホストあてのパケットとみなして return する
+     *     - インタフェースのIPアドレスと一致する
+     *     - インタフェースのブロードキャストIPアドレスと一致する
+     *     - グローバルなブロードキャストIPアドレス（255.255.255.255）と一致する
      */
     debugf("dev=%s, len=%zd", dev->name, len);
     ip_dump(data, len);
