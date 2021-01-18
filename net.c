@@ -271,9 +271,13 @@ net_shutdown(void)
     debugf("done");
 }
 
+#include "ip.h"
+
 int
 net_init(void)
 {
-    /* do nothing */
+    if (ip_init() == -1) {
+        return -1;
+    }
     return 0;
 }
