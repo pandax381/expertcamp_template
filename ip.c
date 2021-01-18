@@ -89,7 +89,9 @@ ip_dump(const uint8_t *data, size_t len)
     fprintf(stderr, "       sum: 0x%04x (0x%04x)\n", sum, cksum16((uint16_t *)data, hlen, -sum));
     fprintf(stderr, "       src: %s\n", ip_addr_ntop(hdr->src, addr, sizeof(addr)));
     fprintf(stderr, "       dst: %s\n", ip_addr_ntop(hdr->dst, addr, sizeof(addr)));
-    hexdump(stderr, data + hlen, total - hlen); /* payload */
+#ifdef HEXDUMP
+    hexdump(stderr, data, total);
+#endif
     funlockfile(stderr);
 }
 
