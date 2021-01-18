@@ -139,8 +139,8 @@ static void
 ip_input(const uint8_t *data, size_t len, struct net_device *dev)
 {
     struct ip_hdr *hdr;
-
     struct ip_iface *iface;
+    char addr[IP_ADDR_STR_LEN];
 
     /*
      * exercise: step5
@@ -155,6 +155,7 @@ ip_input(const uint8_t *data, size_t len, struct net_device *dev)
      *     d. ttl（ttl が 0 ではない）
      *     c. チェックサム（チェックサムを再計算した結果が0である）
      */
+
     iface = (struct ip_iface *)net_device_get_iface(dev, NET_IFACE_FAMILY_IPV4);
     if (!iface) {
         /* IP interface is not registered to the device */
@@ -168,7 +169,7 @@ ip_input(const uint8_t *data, size_t len, struct net_device *dev)
      *     - インタフェースのブロードキャストIPアドレスと一致する
      *     - グローバルなブロードキャストIPアドレス（255.255.255.255）と一致する
      */
-    debugf("dev=%s, len=%zd", dev->name, len);
+    debugf("dev=%s, iface=%s, len=%zd", dev->name, ip_addr_ntop(iface->unicast, addr, sizeof(addr)), len);
     ip_dump(data, len);
 }
 
