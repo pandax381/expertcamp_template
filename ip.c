@@ -25,6 +25,9 @@ struct ip_hdr {
 const ip_addr_t IP_ADDR_ANY       = 0x00000000; /* 0.0.0.0 */
 const ip_addr_t IP_ADDR_BROADCAST = 0xffffffff; /* 255.255.255.255 */
 
+/* NOTE: if you want to add/delete the entries after net_run(), you need to protect these lists with a mutex. */
+static struct ip_iface *ifaces;
+
 int
 ip_addr_pton(const char *p, ip_addr_t *n)
 {
@@ -88,6 +91,46 @@ ip_dump(const uint8_t *data, size_t len)
     fprintf(stderr, "       dst: %s\n", ip_addr_ntop(hdr->dst, addr, sizeof(addr)));
     hexdump(stderr, data + hlen, total - hlen); /* payload */
     funlockfile(stderr);
+}
+
+struct ip_iface *
+ip_iface_alloc(const char *unicast, const char *netmask)
+{
+    struct ip_iface *iface;
+
+    if (!unicast || !netmask) {
+        errorf("invalid arguments");
+        return NULL;
+    }
+    iface = calloc(1, sizeof(*iface));
+    if (!iface) {
+        errorf("calloc() failure");
+        return NULL;
+    }
+    NET_IFACE(iface)->family = NET_IFACE_FAMILY_IPV4;
+    /*
+     * exercise: step6
+     *   ifaceの次のメンバに値を設定
+     *     - unicast, netmask, broadcast
+     */
+    return iface;
+}
+
+/* NOTE: must not be call after net_run() */
+int
+ip_iface_register(struct net_device *dev, struct ip_iface *iface)
+{
+    char addr1[IP_ADDR_STR_LEN];
+    char addr2[IP_ADDR_STR_LEN];
+
+    /*
+     * exercise: step6
+     *   (1) dev に iface を追加する
+     *   (2) IPインタフェースのリスト（ifaces）の先頭に追加
+     */
+    infof("registerd: dev=%s, unicast=%s netmask=%s",
+        dev->name, ip_addr_ntop(iface->unicast, addr1, sizeof(addr1)), ip_addr_ntop(iface->netmask, addr2, sizeof(addr2)));
+    return 0;
 }
 
 static void
