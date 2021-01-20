@@ -6,6 +6,7 @@
 
 #include "util.h"
 #include "net.h"
+#include "arp.h"
 #include "ip.h"
 
 struct ip_protocol {
@@ -222,14 +223,18 @@ static int
 ip_output_device(struct ip_iface *iface, const uint8_t *data, size_t len, ip_addr_t dst)
 {
     uint8_t hwaddr[NET_DEVICE_ADDR_LEN] = {};
+    int ret;
     char addr[IP_ADDR_STR_LEN];
 
     if (NET_IFACE(iface)->dev->flags & NET_DEVICE_FLAG_NEED_ARP) {
         if (dst == iface->broadcast || dst == IP_ADDR_BROADCAST) {
             memcpy(hwaddr, NET_IFACE(iface)->dev->broadcast, NET_IFACE(iface)->dev->alen);
         } else {
-            errorf("arp does not implement");
-            return -1;
+            /*
+             * exercise: step12
+             *   arp_resolve() を呼び出してアドレス解決
+             *     - 戻り値が ARP_RESOLVE_FOUND でなければその値をこの関数の戻り値として終了する
+             */
         }
     }
     debugf("dev=%s, iface=%s, len=%zu", NET_IFACE(iface)->dev->name, ip_addr_ntop(dst, addr, sizeof(addr)), len);
