@@ -270,11 +270,34 @@ arp_resolve(struct net_iface *iface, ip_addr_t pa, uint8_t *ha)
     return ARP_RESOLVE_QUERY;
 }
 
+static void
+arp_timer(void)
+{
+    struct arp_entry *entry;
+    struct timeval now, diff;
+
+    pthread_mutex_lock(&mutex);
+    /*
+     * exercise: step13
+     *   ARPテーブルを巡回してタイムアウトしているエントリを削除する
+     *    - ARPエントリのうち state が ARP_ENTRY_STATE_FREE または ARP_ENTRY_STATE_STATIC のものはチェックをスキップする
+     *    - struct timeval 型で保持している時刻情報は timersub() で差分を取得する
+     *    - タイムアウトの判定は「現在時刻」と「エントリのタイムスタンプ」の差分が ARP_TABLE_TIMEOUT（秒）以上であるかどうか
+     */
+    pthread_mutex_unlock(&mutex);
+}
+
 int
 arp_init(void)
 {
+    struct timeval interval = {1, 0};
+
     if (net_protocol_register("ARP", NET_PROTOCOL_TYPE_ARP, arp_input) == -1) {
         return -1;
     }
+    /*
+     * exercise: step13
+     *   プロトコルスタック本体にARPタイマーを登録する
+     */
     return 0;
 }
