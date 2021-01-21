@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <signal.h>
+#include <sys/time.h>
 
 #include "util.h"
 #include "net.h"
@@ -26,12 +27,21 @@ struct net_protocol_queue_entry {
     uint8_t data[0];
 };
 
+struct net_timer {
+    struct net_timer *next;
+    char name[16];
+    struct timeval interval;
+    struct timeval last;
+    void (*handler)(void);
+};
+
 static pthread_t thread;
 static volatile sig_atomic_t terminate;
 
 /* NOTE: if you want to add/delete the entries after net_run(), you need to protect these lists with a mutex. */
 static struct net_device *devices;
 static struct net_protocol *protocols;
+static struct net_timer *timers;
 
 struct net_device *
 net_device_alloc(void (*setup)(struct net_device *dev))
@@ -217,6 +227,19 @@ net_protocol_name(uint16_t type)
     return "UNKNOWN";
 }
 
+int
+net_timer_register(const char *name, struct timeval interval, void (*handler)(void))
+{
+    struct net_timer *timer;
+
+    /*
+     * exercise: step13
+     *   新しいタイマー用のメモリを確保してパラメータを設定し、タイマーのリストに追加する
+     */
+    infof("registerd: %s interval={%d, %d}", timer->name, interval.tv_sec, interval.tv_usec);
+    return 0;
+}
+
 static void *
 net_thread(void *arg)
 {
@@ -224,6 +247,8 @@ net_thread(void *arg)
     struct net_device *dev;
     struct net_protocol *proto;
     struct net_protocol_queue_entry *entry;
+    struct net_timer *timer;
+    struct timeval now, diff;
 
     while (!terminate) {
         count = 0;
@@ -248,6 +273,14 @@ net_thread(void *arg)
              *   (3) entry は net_input_handler() 内で動的に確保されたものなのでメモリを開放する
              *   (4) count をインクリメントする
              */
+        }
+        for (timer = timers; timer; timer = timer->next) {
+            gettimeofday(&now, NULL);
+            timersub(&now, &timer->last, &diff);
+            if (timercmp(&timer->interval, &diff, <) != 0) { /* true (!0) or false (0) */
+                timer->handler();
+                timer->last = now;
+            }
         }
         /*
          * exercise: step4
