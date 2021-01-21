@@ -24,6 +24,7 @@ OBJS = util.o \
        arp.o \
        ip.o \
        icmp.o \
+       udp.o \
 
 CFLAGS := $(CFLAGS) -g -W -Wall -Wno-unused-parameter -I .
 
